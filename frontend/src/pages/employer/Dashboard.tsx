@@ -15,7 +15,7 @@ export default function EmployerDashboard() {
   const { status, address, account: walletAccount } = useAccount();
   const { provider } = useProvider();
   const {
-    employees, companyName, runCount, loading, fetchEmployees,
+    employees, companyName, runCount, loading,
     contractAddress, tongoContract, tokenSymbol,
   } = usePayrollContract(provider, address);
 
@@ -23,10 +23,6 @@ export default function EmployerDashboard() {
 
   const FACTORY_ADDRESS = PAYROLL_FACTORY[DEFAULT_NETWORK];
   const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
 
   useEffect(() => {
     const key = loadTongoKey();

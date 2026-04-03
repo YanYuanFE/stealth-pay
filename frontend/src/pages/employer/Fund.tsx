@@ -16,14 +16,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 export default function EmployerFund() {
   const { account: walletAccount, address, status } = useAccount();
   const { provider } = useProvider();
-  const { tongoContract, tokenSymbol, fetchEmployees } = usePayrollContract(provider, address);
+  const { tongoContract, tokenSymbol } = usePayrollContract(provider, address);
 
   const { account, loading: confLoading, initialize, refreshState } = useConfidential(tongoContract, provider);
   const [amount, setAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const [txStatus, setTxStatus] = useState<string | null>(null);
-
-  useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
 
   useEffect(() => {
     const key = loadTongoKey();

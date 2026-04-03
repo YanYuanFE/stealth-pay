@@ -28,7 +28,7 @@ type Step = 'input' | 'confirm' | 'processing' | 'done' | 'error';
 export default function EmployerRunPayroll() {
   const { account: walletAccount, address } = useAccount();
   const { provider } = useProvider();
-  const { employees, fetchEmployees, buildRecordRunCall, contractAddress, tongoContract, tokenSymbol } =
+  const { employees, buildRecordRunCall, contractAddress, tongoContract, tokenSymbol } =
     usePayrollContract(provider, address);
   const activeEmployees = employees.filter((e) => e.isActive);
   const selectedToken = tokenSymbol || 'TOKEN';
@@ -42,11 +42,6 @@ export default function EmployerRunPayroll() {
   const [proofProgress, setProofProgress] = useState(0);
   const [decrypting, setDecrypting] = useState(false);
   const [acks, setAcks] = useState({ amounts: false, irreversible: false });
-
-  // Fetch employees from chain
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
 
   // Auto-initialize Tongo account
   useEffect(() => {

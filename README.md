@@ -1,6 +1,10 @@
-# StealthPay — Confidential Payroll on Starknet
+<p align="center">
+  <img src="assets/logo.png" width="120" alt="StealthPay" />
+</p>
 
-> Pay your team in any token with fully encrypted salary amounts. Powered by zero-knowledge proofs and ElGamal encryption on Starknet.
+<h1 align="center">StealthPay</h1>
+<p align="center"><strong>Confidential Payroll on Starknet</strong></p>
+<p align="center">Pay your team in any token with fully encrypted salary amounts.<br/>Powered by zero-knowledge proofs and ElGamal encryption on Starknet.</p>
 
 ## Overview
 

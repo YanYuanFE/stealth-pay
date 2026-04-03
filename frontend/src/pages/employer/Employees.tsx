@@ -47,8 +47,6 @@ export default function EmployerEmployees() {
   const [editCadence, setEditCadence] = useState('1');
   const [editSaving, setEditSaving] = useState(false);
 
-  useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
-
   // Read auditor public key from the contract
   useEffect(() => {
     if (!contractAddress || !provider) return;

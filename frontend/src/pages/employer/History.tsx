@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount, useProvider } from '@starknet-react/core';
 import { usePayrollContract } from '../../hooks/usePayrollContract';
@@ -16,11 +15,7 @@ function formatTs(ts: number): string {
 export default function EmployerHistory() {
   const { address } = useAccount();
   const { provider } = useProvider();
-  const { runCount, payrollRuns, loading, fetchEmployees } = usePayrollContract(provider, address);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
+  const { runCount, payrollRuns, loading } = usePayrollContract(provider, address);
 
   return (
     <div>
