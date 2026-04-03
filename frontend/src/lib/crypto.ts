@@ -1,7 +1,8 @@
 import { derivePublicKey as tongoDerivePubKey, pubKeyAffineToBase58 } from '@fatsolutions/tongo-sdk';
 import { toHex } from './utils';
 
-const STORAGE_KEY = 'stealthpay_tongo_key';
+const STORAGE_PREFIX = 'stealthpay_tongo_key_';
+const LEGACY_KEY = 'stealthpay_tongo_key';
 
 export interface TongoKeypair {
   privateKey: bigint;
@@ -16,48 +17,55 @@ export function generateTongoKeypair(): TongoKeypair {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   const raw = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''));
-  const privateKey = (raw % (CURVE_ORDER - 2n)) + 1n; // 1 <= key < CURVE_ORDER
+  const privateKey = (raw % (CURVE_ORDER - 2n)) + 1n;
 
   const pubKey = tongoDerivePubKey(privateKey);
   const tongoAddress = pubKeyAffineToBase58(pubKey);
 
   return {
     privateKey,
-    publicKey: {
-      x: toHex(pubKey.x),
-      y: toHex(pubKey.y),
-    },
+    publicKey: { x: toHex(pubKey.x), y: toHex(pubKey.y) },
     tongoAddress,
   };
 }
 
 export function derivePublicKey(privateKey: bigint): { x: string; y: string } {
   const pubKey = tongoDerivePubKey(privateKey);
-  return {
-    x: toHex(pubKey.x),
-    y: toHex(pubKey.y),
-  };
+  return { x: toHex(pubKey.x), y: toHex(pubKey.y) };
 }
 
-export function saveTongoKey(key: bigint): void {
+function storageKey(walletAddress?: string): string {
+  if (walletAddress) return STORAGE_PREFIX + walletAddress.toLowerCase();
+  return LEGACY_KEY;
+}
+
+export function saveTongoKey(key: bigint, walletAddress?: string): void {
   const hex = key.toString(16);
-  localStorage.setItem(STORAGE_KEY, hex);
+  localStorage.setItem(storageKey(walletAddress), hex);
+  // Also save to legacy key for backward compat
+  localStorage.setItem(LEGACY_KEY, hex);
 }
 
-export function loadTongoKey(): bigint | null {
-  const hex = localStorage.getItem(STORAGE_KEY);
-  if (!hex) return null;
-  try {
-    return BigInt('0x' + hex);
-  } catch {
-    return null;
+export function loadTongoKey(walletAddress?: string): bigint | null {
+  // Try address-specific key first
+  if (walletAddress) {
+    const hex = localStorage.getItem(storageKey(walletAddress));
+    if (hex) {
+      try { return BigInt('0x' + hex); } catch { /* fall through */ }
+    }
   }
+  // Fall back to legacy key
+  const hex = localStorage.getItem(LEGACY_KEY);
+  if (!hex) return null;
+  try { return BigInt('0x' + hex); } catch { return null; }
 }
 
-export function hasSavedKey(): boolean {
-  return localStorage.getItem(STORAGE_KEY) !== null;
+export function hasSavedKey(walletAddress?: string): boolean {
+  if (walletAddress && localStorage.getItem(storageKey(walletAddress))) return true;
+  return localStorage.getItem(LEGACY_KEY) !== null;
 }
 
-export function clearTongoKey(): void {
-  localStorage.removeItem(STORAGE_KEY);
+export function clearTongoKey(walletAddress?: string): void {
+  if (walletAddress) localStorage.removeItem(storageKey(walletAddress));
+  localStorage.removeItem(LEGACY_KEY);
 }

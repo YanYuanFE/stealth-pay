@@ -75,7 +75,7 @@ export default function EmployerEmployees() {
     }
     setTongoAddresses(addrs);
 
-    const privateKey = loadTongoKey();
+    const privateKey = loadTongoKey(address);
     if (!privateKey || !contractAddress) return;
     const decrypt = async () => {
       const results: Record<number, bigint> = {};
@@ -114,7 +114,7 @@ export default function EmployerEmployees() {
       if (editSalary && newSalary > 0 && (!oldSalary || BigInt(newSalary) !== oldSalary)) {
         if (!Number.isFinite(newSalary) || !Number.isInteger(newSalary)) throw new Error('Salary must be a positive whole number');
         if (newSalary >= 2 ** 32) throw new Error('Salary must be less than 4,294,967,296');
-        const privateKey = loadTongoKey();
+        const privateKey = loadTongoKey(address);
         if (!privateKey) throw new Error('No Tongo key found');
         const encrypted = await encryptSalary(privateKey, { x: emp.pubkeyX, y: emp.pubkeyY }, BigInt(newSalary), contractAddress);
         calls.push({
@@ -148,7 +148,7 @@ export default function EmployerEmployees() {
       // Update audit salary copy if auditor is set
       if (auditorPubKey && editSalary) {
         try {
-          const auditKey = loadTongoKey();
+          const auditKey = loadTongoKey(address);
           if (auditKey) {
             const auditEnc = await encryptSalary(auditKey, auditorPubKey, BigInt(Number(editSalary)), contractAddress);
             await account.execute([{
@@ -196,7 +196,7 @@ export default function EmployerEmployees() {
         return;
       }
       if (salaryAmount > 0) {
-        const privateKey = loadTongoKey();
+        const privateKey = loadTongoKey(address);
         if (!privateKey) { setTxStatus('Error: No Tongo key found.'); setSubmitting(false); return; }
         if (salaryAmount >= 2 ** 32) { setTxStatus('Error: Salary too large.'); setSubmitting(false); return; }
         encrypted = await encryptSalary(privateKey, { x: pubkeyX, y: pubkeyY }, BigInt(salaryAmount), contractAddress);
@@ -213,7 +213,7 @@ export default function EmployerEmployees() {
       // Encrypt audit salary copy if auditor is set
       if (encrypted && auditorPubKey) {
         try {
-          const auditPrivateKey = loadTongoKey();
+          const auditPrivateKey = loadTongoKey(address);
           if (auditPrivateKey) {
             const auditEncrypted = await encryptSalary(auditPrivateKey, auditorPubKey, BigInt(salaryAmount), contractAddress);
             const empCount = employees.length + 1;

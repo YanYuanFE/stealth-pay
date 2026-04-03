@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAccount } from '@starknet-react/core';
 import { generateTongoKeypair, saveTongoKey, hasSavedKey, loadTongoKey, derivePublicKey } from '../../lib/crypto';
 import { pubKeyAffineToBase58 } from '@fatsolutions/tongo-sdk';
 import type { TongoKeypair } from '../../lib/crypto';
@@ -9,15 +10,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CopyButton } from '../../components/CopyButton';
 
 export default function EmployeeSetup() {
+  const { address } = useAccount();
   const [keypair, setKeypair] = useState<TongoKeypair | null>(null);
   const [importKey, setImportKey] = useState('');
   const [importedPubkey, setImportedPubkey] = useState<{ x: string; y: string } | null>(null);
   const [importedTongoAddr, setImportedTongoAddr] = useState<string | null>(null);
-  const hasKey = hasSavedKey();
+  const hasKey = hasSavedKey(address);
 
   const handleGenerate = () => {
     const kp = generateTongoKeypair();
-    saveTongoKey(kp.privateKey);
+    saveTongoKey(kp.privateKey, address);
     setKeypair(kp);
   };
 
@@ -25,7 +27,7 @@ export default function EmployeeSetup() {
     try {
       const key = BigInt(importKey);
       const pubkey = derivePublicKey(key);
-      saveTongoKey(key);
+      saveTongoKey(key, address);
       setImportedPubkey(pubkey);
       setImportKey('');
     } catch {
@@ -34,7 +36,7 @@ export default function EmployeeSetup() {
   };
 
   const handleShowExisting = () => {
-    const key = loadTongoKey();
+    const key = loadTongoKey(address);
     if (key) {
       const pubkey = derivePublicKey(key);
       setImportedPubkey(pubkey);

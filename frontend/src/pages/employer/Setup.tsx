@@ -40,7 +40,7 @@ export default function EmployerSetup() {
 
   const handleGenerateKeypair = () => {
     const kp = generateTongoKeypair();
-    saveTongoKey(kp.privateKey);
+    saveTongoKey(kp.privateKey, address);
     setKeypair(kp);
     setStep('deploy');
   };

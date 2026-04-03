@@ -6,7 +6,7 @@ import { loadTongoKey, derivePublicKey } from '../../lib/crypto';
 import { buildRolloverCalls, buildWithdrawCalls, buildRagequitCalls } from '../../lib/stealthpay';
 import { formatBalance } from '../../lib/format';
 import { decryptSalary, isEmptySalary, parseEncryptedSalary } from '../../lib/salary-crypto';
-import { toHex, getErrorMessage, tupleToPubKey } from '../../lib/utils';
+import { toHex, getErrorMessage, tupleToPubKey, waitForTx } from '../../lib/utils';
 import { toastTxSuccess, toastTxError, txUrl } from '../../lib/toast';
 import { PAYROLL_FACTORY, DEFAULT_NETWORK } from '../../config/contracts';
 import factoryAbi from '../../abi/payroll_factory.json';
@@ -39,10 +39,15 @@ export default function EmployeePortal() {
   const [ragequitting, setRagequitting] = useState(false);
   const [txStatus, setTxStatus] = useState<string | null>(null);
 
+  // Reset discovery when address changes
+  useEffect(() => {
+    discoveredRef.current = false;
+  }, [address]);
+
   // Auto-discover company from Tongo key
   useEffect(() => {
     if (!provider || discoveredRef.current) return;
-    const key = loadTongoKey();
+    const key = loadTongoKey(address);
     if (!key) return;
 
     const discover = async () => {
@@ -132,16 +137,16 @@ export default function EmployeePortal() {
     };
 
     discover();
-  }, [provider]);
+  }, [provider, address]);
 
   // Initialize Tongo account AFTER tongoContractAddress is set
   useEffect(() => {
     if (!tongoContractAddress || !provider) return;
-    const key = loadTongoKey();
+    const key = loadTongoKey(address);
     if (key) {
       initialize(key);
     }
-  }, [tongoContractAddress, provider, initialize]);
+  }, [tongoContractAddress, provider, initialize, address]);
 
   const handleRollover = async () => {
     if (!account || !address || !walletAccount) return;
@@ -152,7 +157,7 @@ export default function EmployeePortal() {
       const tx = await walletAccount.execute(calls);
       setTxStatus(`Rollover submitted: ${tx.transaction_hash}`);
       toastTxSuccess('Rollover submitted', tx.transaction_hash);
-      setTimeout(() => refreshState(), 8000);
+      waitForTx(provider, tx.transaction_hash).then(() => refreshState()).catch(console.error);
     } catch (err: unknown) {
       setTxStatus(`Error: ${getErrorMessage(err, 'Failed')}`);
       toastTxError('Rollover failed', err);
@@ -173,7 +178,7 @@ export default function EmployeePortal() {
       setTxStatus(`Withdraw submitted: ${tx.transaction_hash}`);
       toastTxSuccess('Withdrawal submitted', tx.transaction_hash);
       setWithdrawAmount('');
-      setTimeout(() => refreshState(), 8000);
+      waitForTx(provider, tx.transaction_hash).then(() => refreshState()).catch(console.error);
     } catch (err: unknown) {
       setTxStatus(`Error: ${getErrorMessage(err, 'Failed')}`);
       toastTxError('Withdrawal failed', err);
@@ -190,8 +195,7 @@ export default function EmployeePortal() {
       const calls = await buildRagequitCalls(account.confidential, address, address);
       const tx = await walletAccount.execute(calls);
       toastTxSuccess('Emergency withdrawal submitted', tx.transaction_hash);
-      // Refresh after confirmation
-      setTimeout(() => window.location.reload(), 8000);
+      waitForTx(provider, tx.transaction_hash).then(() => refreshState()).catch(console.error);
     } catch (err: unknown) {
       toastTxError('Emergency withdrawal failed', err);
     } finally {
@@ -199,7 +203,7 @@ export default function EmployeePortal() {
     }
   };
 
-  const hasKey = !!loadTongoKey();
+  const hasKey = !!loadTongoKey(address);
   const symbol = tokenSymbol || 'TOKEN';
 
   return (

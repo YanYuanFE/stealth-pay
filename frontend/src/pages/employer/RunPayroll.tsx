@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useProvider } from '@starknet-react/core';
+import { useQueryClient } from '@tanstack/react-query';
 import { buildPayrollCalls } from '../../lib/stealthpay';
 import { useConfidential } from '../../hooks/useConfidential';
 import { usePayrollContract } from '../../hooks/usePayrollContract';
 import { loadTongoKey } from '../../lib/crypto';
 import { decryptSalary, isEmptySalary } from '../../lib/salary-crypto';
 import { formatBalance } from '../../lib/format';
-import { getErrorMessage } from '../../lib/utils';
+import { getErrorMessage, waitForTx } from '../../lib/utils';
 import { toastTxSuccess, toastTxError, txUrl } from '../../lib/toast';
 import type { PayrollTransfer } from '../../lib/stealthpay';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,6 +29,7 @@ type Step = 'input' | 'confirm' | 'processing' | 'done' | 'error';
 export default function EmployerRunPayroll() {
   const { account: walletAccount, address } = useAccount();
   const { provider } = useProvider();
+  const queryClient = useQueryClient();
   const { employees, buildRecordRunCall, contractAddress, tongoContract, tokenSymbol } =
     usePayrollContract(provider, address);
   const activeEmployees = employees.filter((e) => e.isActive);
@@ -45,11 +47,11 @@ export default function EmployerRunPayroll() {
 
   // Auto-initialize Tongo account
   useEffect(() => {
-    const key = loadTongoKey();
+    const key = loadTongoKey(address);
     if (key && provider && tongoContract) {
       initialize(key);
     }
-  }, [provider, tongoContract, initialize]);
+  }, [provider, tongoContract, initialize, address]);
 
   // Initialize entries and decrypt salaries when employees change
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function EmployerRunPayroll() {
       }));
 
       // Try to decrypt pre-set salaries in parallel
-      const privateKey = loadTongoKey();
+      const privateKey = loadTongoKey(address);
       if (privateKey && contractAddress) {
         setDecrypting(true);
         const decryptPromises = newEntries.map(async (entry) => {
@@ -146,6 +148,9 @@ export default function EmployerRunPayroll() {
       setProofProgress(100);
       toastTxSuccess('Payroll executed', tx.transaction_hash);
       setStep('done');
+      waitForTx(provider, tx.transaction_hash).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['company-data'] });
+      }).catch(console.error);
     } catch (err: unknown) {
       console.error('Payroll execution failed:', err);
       const msg = getErrorMessage(err, 'Transaction failed');

@@ -5,7 +5,8 @@ import { useConfidential } from '../../hooks/useConfidential';
 import { loadTongoKey } from '../../lib/crypto';
 import { formatBalance } from '../../lib/format';
 import { PAYROLL_FACTORY, DEFAULT_NETWORK } from '../../config/contracts';
-import { toastTxSuccess, toastTxError } from '../../lib/toast';
+import { toastTxSuccess, toastTxError, contractUrl } from '../../lib/toast';
+import { CopyButton } from '../../components/CopyButton';
 import { Link } from 'react-router-dom';
 import EmployerSetup from './Setup';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -25,11 +26,11 @@ export default function EmployerDashboard() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const key = loadTongoKey();
+    const key = loadTongoKey(address);
     if (key && provider && tongoContract) {
       initialize(key);
     }
-  }, [provider, tongoContract, initialize]);
+  }, [provider, tongoContract, initialize, address]);
 
   const handleDelete = async () => {
     if (!walletAccount || !window.confirm('Are you sure? This will permanently remove your company registration.')) return;
@@ -62,7 +63,14 @@ export default function EmployerDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold font-serif text-[var(--fg)] text-balance">{companyName || 'Employer Dashboard'}</h1>
-          {companyName && <p className="text-sm text-[var(--fg-muted)] mt-1">Employer Dashboard</p>}
+          {contractAddress && (
+            <p className="text-xs font-mono text-[var(--fg-faint)] mt-1 inline-flex items-center gap-1">
+              <a href={contractUrl(contractAddress)} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--brand)]">
+                {contractAddress.slice(0, 10)}...{contractAddress.slice(-6)}
+              </a>
+              <CopyButton text={contractAddress} />
+            </p>
+          )}
         </div>
         {status !== 'connected' && (
           <p className="text-sm text-[var(--fg-muted)] text-pretty">Connect your wallet to get started</p>

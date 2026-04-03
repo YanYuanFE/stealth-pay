@@ -24,11 +24,11 @@ export default function EmployerFund() {
   const [txStatus, setTxStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    const key = loadTongoKey();
+    const key = loadTongoKey(address);
     if (key && provider && tongoContract) {
       initialize(key);
     }
-  }, [provider, tongoContract, initialize]);
+  }, [provider, tongoContract, initialize, address]);
 
   const symbol = tokenSymbol || 'TOKEN';
 

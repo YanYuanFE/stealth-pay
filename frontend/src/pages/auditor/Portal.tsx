@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useProvider } from '@starknet-react/core';
+import { useAccount, useProvider } from '@starknet-react/core';
 import { Contract } from 'starknet';
 import { pubKeyAffineToBase58, derivePublicKey } from '@fatsolutions/tongo-sdk';
 import payrollAbi from '../../abi/payroll_manager.json';
@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 
 export default function AuditorPortal() {
+  const { address } = useAccount();
   const { provider } = useProvider();
   const [contractAddr, setContractAddr] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,8 +33,8 @@ export default function AuditorPortal() {
 
   // Check if Tongo key exists in localStorage
   useEffect(() => {
-    setHasKey(loadTongoKey() !== null);
-  }, []);
+    setHasKey(loadTongoKey(address) !== null);
+  }, [address]);
 
   const handleAudit = async () => {
     if (!contractAddr || !provider) return;
@@ -43,7 +44,7 @@ export default function AuditorPortal() {
     setCompanyName('');
 
     try {
-      const auditorPrivateKey = loadTongoKey();
+      const auditorPrivateKey = loadTongoKey(address);
       if (!auditorPrivateKey) {
         setError('No Tongo key found. Go to Setup to generate or import one.');
         setLoading(false);
