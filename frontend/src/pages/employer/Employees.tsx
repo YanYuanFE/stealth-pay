@@ -127,6 +127,21 @@ export default function EmployerEmployees() {
             encrypted.nonceLow.toString(), encrypted.nonceHigh.toString(),
           ],
         });
+
+        // Add audit salary to same multicall
+        if (auditorPubKey) {
+          const auditEnc = await encryptSalary(privateKey, auditorPubKey, BigInt(newSalary), contractAddress);
+          calls.push({
+            contractAddress,
+            entrypoint: 'set_audit_salary',
+            calldata: [
+              editIndex.toString(),
+              auditEnc.cipher0.toString(), auditEnc.cipher1.toString(),
+              auditEnc.cipher2.toString(), auditEnc.cipher3.toString(),
+              auditEnc.nonceLow.toString(), auditEnc.nonceHigh.toString(),
+            ],
+          });
+        }
       }
 
       // Update cadence if changed
@@ -144,28 +159,6 @@ export default function EmployerEmployees() {
       toastTxSuccess('Employee updated', tx.transaction_hash);
       setEditOpen(false);
       waitForTx(provider, tx.transaction_hash).then(() => fetchEmployees()).catch(console.error);
-
-      // Update audit salary copy if auditor is set
-      if (auditorPubKey && editSalary) {
-        try {
-          const auditKey = loadTongoKey(address);
-          if (auditKey) {
-            const auditEnc = await encryptSalary(auditKey, auditorPubKey, BigInt(Number(editSalary)), contractAddress);
-            await account.execute([{
-              contractAddress,
-              entrypoint: 'set_audit_salary',
-              calldata: [
-                editIndex.toString(),
-                auditEnc.cipher0.toString(), auditEnc.cipher1.toString(),
-                auditEnc.cipher2.toString(), auditEnc.cipher3.toString(),
-                auditEnc.nonceLow.toString(), auditEnc.nonceHigh.toString(),
-              ],
-            }]);
-          }
-        } catch (auditErr) {
-          console.warn('Failed to update audit salary:', auditErr);
-        }
-      }
     } catch (err: unknown) {
       toastTxError('Update failed', err);
     } finally {
@@ -201,37 +194,34 @@ export default function EmployerEmployees() {
         if (salaryAmount >= 2 ** 32) { setTxStatus('Error: Salary too large.'); setSubmitting(false); return; }
         encrypted = await encryptSalary(privateKey, { x: pubkeyX, y: pubkeyY }, BigInt(salaryAmount), contractAddress);
       }
-      const call = buildRegisterCall(pubkeyX, pubkeyY, encrypted);
+      const calls = [buildRegisterCall(pubkeyX, pubkeyY, encrypted)];
+
+      // Add audit salary to same multicall if auditor is set
+      if (encrypted && auditorPubKey) {
+        const auditPrivateKey = loadTongoKey(address);
+        if (auditPrivateKey) {
+          const auditEncrypted = await encryptSalary(auditPrivateKey, auditorPubKey, BigInt(salaryAmount), contractAddress);
+          const empCount = employees.length + 1;
+          calls.push({
+            contractAddress,
+            entrypoint: 'set_audit_salary',
+            calldata: [
+              empCount.toString(),
+              auditEncrypted.cipher0.toString(), auditEncrypted.cipher1.toString(),
+              auditEncrypted.cipher2.toString(), auditEncrypted.cipher3.toString(),
+              auditEncrypted.nonceLow.toString(), auditEncrypted.nonceHigh.toString(),
+            ],
+          });
+        }
+      }
+
       if (!account) throw new Error('Wallet not connected');
-      const tx = await account.execute([call]);
+      const tx = await account.execute(calls);
       setTxStatus(`Registered! Tx: ${tx.transaction_hash.slice(0, 20)}...`);
       toastTxSuccess('Employee registered', tx.transaction_hash);
       setTongoAddress('');
       setSalaryInput('');
       waitForTx(provider, tx.transaction_hash).then(() => fetchEmployees()).catch(console.error);
-
-      // Encrypt audit salary copy if auditor is set
-      if (encrypted && auditorPubKey) {
-        try {
-          const auditPrivateKey = loadTongoKey(address);
-          if (auditPrivateKey) {
-            const auditEncrypted = await encryptSalary(auditPrivateKey, auditorPubKey, BigInt(salaryAmount), contractAddress);
-            const empCount = employees.length + 1;
-            await account.execute([{
-              contractAddress,
-              entrypoint: 'set_audit_salary',
-              calldata: [
-                empCount.toString(),
-                auditEncrypted.cipher0.toString(), auditEncrypted.cipher1.toString(),
-                auditEncrypted.cipher2.toString(), auditEncrypted.cipher3.toString(),
-                auditEncrypted.nonceLow.toString(), auditEncrypted.nonceHigh.toString(),
-              ],
-            }]);
-          }
-        } catch (auditErr) {
-          console.warn('Failed to set audit salary:', auditErr);
-        }
-      }
     } catch (err: unknown) {
       setTxStatus(`Error: ${getErrorMessage(err)}`);
       toastTxError('Registration failed', err);

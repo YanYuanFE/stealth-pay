@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAccount, useProvider } from '@starknet-react/core';
+import { Contract } from 'starknet';
+import { pubKeyAffineToBase58 } from '@fatsolutions/tongo-sdk';
 import { usePayrollContract } from '../../hooks/usePayrollContract';
+import payrollAbi from '../../abi/payroll_manager.json';
 import { useConfidential } from '../../hooks/useConfidential';
 import { loadTongoKey } from '../../lib/crypto';
 import { formatBalance } from '../../lib/format';
@@ -24,6 +27,25 @@ export default function EmployerDashboard() {
 
   const FACTORY_ADDRESS = PAYROLL_FACTORY[DEFAULT_NETWORK];
   const [deleting, setDeleting] = useState(false);
+  const [auditorAddress, setAuditorAddress] = useState<string | null>(null);
+
+  // Read auditor from contract
+  useEffect(() => {
+    if (!contractAddress || !provider) return;
+    const read = async () => {
+      try {
+        const c = new Contract({ abi: payrollAbi, address: contractAddress, providerOrAccount: provider });
+        const result = await c.get_auditor();
+        const vals = Object.values(result);
+        const x = BigInt(vals[0] as string | number | bigint);
+        const y = BigInt(vals[1] as string | number | bigint);
+        if (x !== 0n || y !== 0n) {
+          setAuditorAddress(pubKeyAffineToBase58({ x, y }));
+        }
+      } catch { /* no auditor */ }
+    };
+    read();
+  }, [contractAddress, provider]);
 
   useEffect(() => {
     const key = loadTongoKey(address);
@@ -63,13 +85,24 @@ export default function EmployerDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold font-serif text-[var(--fg)] text-balance">{companyName || 'Employer Dashboard'}</h1>
+          {companyName && <p className="text-sm text-[var(--fg-muted)] mt-0.5">Employer Dashboard</p>}
           {contractAddress && (
-            <p className="text-xs font-mono text-[var(--fg-faint)] mt-1 inline-flex items-center gap-1">
-              <a href={contractUrl(contractAddress)} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--brand)]">
-                {contractAddress.slice(0, 10)}...{contractAddress.slice(-6)}
-              </a>
-              <CopyButton text={contractAddress} />
-            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+              <p className="text-xs font-mono text-[var(--fg-faint)] inline-flex items-center gap-1">
+                <span className="text-[var(--fg-muted)]">Contract:</span>
+                <a href={contractUrl(contractAddress)} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--brand)]">
+                  {contractAddress.slice(0, 10)}...{contractAddress.slice(-6)}
+                </a>
+                <CopyButton text={contractAddress} />
+              </p>
+              {auditorAddress && (
+                <p className="text-xs font-mono text-[var(--fg-faint)] inline-flex items-center gap-1">
+                  <span className="text-[var(--fg-muted)]">Auditor:</span>
+                  {auditorAddress.slice(0, 8)}...{auditorAddress.slice(-6)}
+                  <CopyButton text={auditorAddress} />
+                </p>
+              )}
+            </div>
           )}
         </div>
         {status !== 'connected' && (
