@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+frontend/node_modules/
+
+# OS
+.DS_Store
+*.swp
+
+# Env
+.env
+.env.local

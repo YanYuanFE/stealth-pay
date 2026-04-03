@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Theme variables ── */
+:root {
+  --bg: #F5F4F0;
+  --bg-card: #EAE8E3;
+  --bg-elevated: #E1DFD9;
+  --bg-hover: #DCD9D2;
+  --border: #DCD9D2;
+  --border-muted: #E1DFD9;
+  --fg: #353432;
+  --fg-muted: #6C6B67;
+  --fg-faint: #96948F;
+  --fg-placeholder: #96948F;
+  --brand: #858AA6;
+  --brand-hover: #6E738C;
+  --brand-light: #DDE3ED;
+  --ring: rgba(133, 138, 166, 0.25);
+  /* Alert */
+  --alert-info-bg: #E8EAF2; --alert-info-border: #D0D4E3; --alert-info-fg: #5C6188;
+  --alert-warn-bg: #F2EDE4; --alert-warn-border: #E3D9C4; --alert-warn-fg: #8B7340;
+  --alert-err-bg: #F2E8E8; --alert-err-border: #E3CFCF; --alert-err-fg: #984040;
+  --alert-ok-bg: #E8F2EB; --alert-ok-border: #C8E0CE; --alert-ok-fg: #3D7A4A;
+  /* Badge */
+  --badge-active-bg: #E0EDDF; --badge-active-fg: #3D7A4A;
+  --badge-inactive-bg: #E1DFD9; --badge-inactive-fg: #6C6B67;
+}
+
+.dark {
+  --bg: #2A2928;
+  --bg-card: #353432;
+  --bg-elevated: #3F3E3B;
+  --bg-hover: #484743;
+  --border: #484743;
+  --border-muted: #3F3E3B;
+  --fg: #F5F4F0;
+  --fg-muted: #A6A49F;
+  --fg-faint: #757470;
+  --fg-placeholder: #757470;
+  --brand: #A1A6C2;
+  --brand-hover: #B8BDD9;
+  --brand-light: #4A4E61;
+  --ring: rgba(161, 166, 194, 0.3);
+  --alert-info-bg: rgba(133, 138, 166, 0.12); --alert-info-border: rgba(133, 138, 166, 0.2); --alert-info-fg: #B8BDD9;
+  --alert-warn-bg: rgba(200, 170, 100, 0.12); --alert-warn-border: rgba(200, 170, 100, 0.2); --alert-warn-fg: #D4C08A;
+  --alert-err-bg: rgba(200, 100, 100, 0.12); --alert-err-border: rgba(200, 100, 100, 0.2); --alert-err-fg: #E0A0A0;
+  --alert-ok-bg: rgba(100, 180, 120, 0.12); --alert-ok-border: rgba(100, 180, 120, 0.2); --alert-ok-fg: #A0D9A8;
+  --badge-active-bg: rgba(100, 180, 120, 0.15); --badge-active-fg: #A0D9A8;
+  --badge-inactive-bg: #3F3E3B; --badge-inactive-fg: #A6A49F;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  color: var(--fg);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+}
+
+/* Noise texture overlay */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ── Typography ── */
+.font-serif { font-family: 'Instrument Serif', Georgia, serif; }
+.font-mono-accent { font-family: 'JetBrains Mono', monospace; }
+
+/* ── Glass panel ── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.dark .glass-panel {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--fg-muted); }
+
+/* ── Landing animations ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.05); }
+}
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 6s ease-in-out infinite; }
+.animate-spin-slow { animation: spin 20s linear infinite; }
+.animate-spin-reverse-slow { animation: spin-reverse 25s linear infinite; }
+.animate-fade-up { opacity: 0; animation: fade-up 0.7s ease-out forwards; }
+
+/* Cipher ring border */
+.cipher-ring { border-width: 1px; border-color: var(--border); }
+.dark .cipher-ring { border-color: rgba(255, 255, 255, 0.04); }
