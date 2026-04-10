@@ -8,7 +8,7 @@ import {
   saveCompanyConfig,
 } from '../../config/contracts';
 import { TOKENS } from '../../config/tokens';
-import { generateTongoKeypair, saveTongoKey } from '../../lib/crypto';
+import { generateTongoKeypair, saveTongoKey, downloadPrivateKey } from '../../lib/crypto';
 import { pubKeyBase58ToAffine } from '@fatsolutions/tongo-sdk';
 import { toHex, getErrorMessage, waitForTx } from '../../lib/utils';
 import { toastTxSuccess, toastTxError, contractUrl } from '../../lib/toast';
@@ -35,6 +35,7 @@ export default function EmployerSetup() {
   const [deployedAddress, setDeployedAddress] = useState<string | null>(null);
   const [auditorKey, setAuditorKey] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [keyDownloaded, setKeyDownloaded] = useState(false);
 
   const tongoAddress = (TONGO_CONTRACTS[DEFAULT_NETWORK] as Record<string, string>)[selectedToken] ?? '';
 
@@ -269,16 +270,37 @@ export default function EmployerSetup() {
                     <CopyButton text={keypair.tongoAddress} />
                   </div>
                 </div>
-                <Alert variant="warning" className="mb-6">
-                  <AlertDescription>Private key saved to browser. Back it up securely.</AlertDescription>
+
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>
+                    <p className="font-medium">Please download and securely save your private key file.</p>
+                    <p className="text-sm mt-1">This is the only way to recover your confidential account. If lost, your funds cannot be accessed.</p>
+                  </AlertDescription>
                 </Alert>
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    downloadPrivateKey(keypair.privateKey, keypair.tongoAddress);
+                    setKeyDownloaded(true);
+                  }}
+                  className="w-full mb-4"
+                  size="lg"
+                >
+                  {keyDownloaded ? 'Download Again' : 'Download Private Key File'}
+                </Button>
+
                 <Button
                   onClick={() => setStep('deploy')}
+                  disabled={!keyDownloaded}
                   className="w-full"
                   size="lg"
                 >
                   Next: Register Company
                 </Button>
+                {!keyDownloaded && (
+                  <p className="text-xs text-[var(--fg-faint)] text-center mt-2">Download your private key to continue</p>
+                )}
               </div>
             )}
           </CardContent>

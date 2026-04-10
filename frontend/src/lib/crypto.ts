@@ -69,3 +69,26 @@ export function clearTongoKey(walletAddress?: string): void {
   if (walletAddress) localStorage.removeItem(storageKey(walletAddress));
   localStorage.removeItem(LEGACY_KEY);
 }
+
+/** Download private key as a .txt file */
+export function downloadPrivateKey(privateKey: bigint, tongoAddress: string): void {
+  const hex = '0x' + privateKey.toString(16);
+  const content = [
+    'Tongo Private Key Backup',
+    '========================',
+    '',
+    `Tongo Address: ${tongoAddress}`,
+    `Private Key:   ${hex}`,
+    '',
+    'WARNING: Anyone with this private key can access your confidential balance.',
+    'Store this file in a secure location and delete it from your downloads.',
+  ].join('\n');
+
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tongo-key-${tongoAddress.slice(0, 8)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAccount } from '@starknet-react/core';
-import { generateTongoKeypair, saveTongoKey, hasSavedKey, loadTongoKey, derivePublicKey } from '../../lib/crypto';
+import { generateTongoKeypair, saveTongoKey, hasSavedKey, loadTongoKey, derivePublicKey, downloadPrivateKey } from '../../lib/crypto';
 import { pubKeyAffineToBase58 } from '@fatsolutions/tongo-sdk';
 import type { TongoKeypair } from '../../lib/crypto';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +15,8 @@ export default function EmployeeSetup() {
   const [importKey, setImportKey] = useState('');
   const [importedPubkey, setImportedPubkey] = useState<{ x: string; y: string } | null>(null);
   const [importedTongoAddr, setImportedTongoAddr] = useState<string | null>(null);
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const hasKey = hasSavedKey(address);
 
   const handleGenerate = () => {
@@ -145,11 +147,21 @@ export default function EmployeeSetup() {
               </div>
             </div>
 
-            <Alert variant="warning">
+            <Alert variant="destructive">
               <AlertDescription>
-                Your private key is saved in browser storage. Back it up securely — if you lose it, you lose access to your confidential balance.
+                <p className="font-medium">Please download and securely save your private key file.</p>
+                <p className="text-sm mt-1">If you lose this key, you lose access to your confidential balance.</p>
               </AlertDescription>
             </Alert>
+
+            <Button
+              variant="outline"
+              onClick={() => downloadPrivateKey(keypair.privateKey, keypair.tongoAddress)}
+              className="w-full mt-4"
+              size="lg"
+            >
+              Download Private Key File
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -182,6 +194,47 @@ export default function EmployeeSetup() {
                   <CopyButton text={importedPubkey.y} />
                 </div>
               </div>
+            </div>
+
+            <div className="border-t border-[var(--border)] pt-4">
+              {!showPrivateKey ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const key = loadTongoKey(address);
+                    if (key) {
+                      setRevealedKey('0x' + key.toString(16));
+                      setShowPrivateKey(true);
+                    }
+                  }}
+                  className="w-full"
+                >
+                  Export Private Key
+                </Button>
+              ) : (
+                <div>
+                  <p className="text-sm text-[var(--fg-muted)] mb-1">Private Key</p>
+                  <div className="p-3 bg-[var(--bg-elevated)] border border-[var(--alert-error-border)] rounded-lg font-mono text-xs text-[var(--fg)] break-all flex items-center gap-1">
+                    <span>{revealedKey}</span>
+                    {revealedKey && <CopyButton text={revealedKey} />}
+                  </div>
+                  {importedTongoAddr && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const key = loadTongoKey(address);
+                        if (key && importedTongoAddr) downloadPrivateKey(key, importedTongoAddr);
+                      }}
+                      className="w-full mt-2"
+                    >
+                      Download Key File
+                    </Button>
+                  )}
+                  <p className="text-xs text-[var(--alert-error-fg)] mt-2">Do not share this key with anyone.</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
